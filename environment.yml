@@ -1,0 +1,10 @@
+name: emata
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - setuptools<81
+  - nodejs=22
+  - pip:
+      - -r backend/requirements-optional.txt

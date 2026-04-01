@@ -1,0 +1,196 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        INSTALL_OPTIONAL: "true"
+        INSTALL_MINERU_RUNTIME: "true"
+        MINERU_VERSION: "${EMATA_MINERU_DOCKER_VERSION:-3.0.1}"
+        MINERU_BUILD_MODEL_SOURCE: "${EMATA_MINERU_DOCKER_MODEL_SOURCE:-modelscope}"
+        MINERU_BUILD_MODEL_TYPE: "${EMATA_MINERU_DOCKER_MODEL_TYPE:-pipeline}"
+        MINERU_BUILD_MODEL_TREE_SHA256: "${EMATA_MINERU_DOCKER_MODEL_TREE_SHA256:-581698f99866ec54ce3997d0636743a430ecc119d35eda330058fdc0ab10a285}"
+    env_file:
+      - .env.example
+      - .env
+    environment:
+      PYTHONPATH: /workspace/backend
+      EMATA_MINERU_EXECUTABLE: /opt/mineru-runtime/bin/mineru
+      MINERU_TOOLS_CONFIG_JSON: /opt/mineru-runtime/config/mineru.json
+      MINERU_MODEL_SOURCE: local
+      MINERU_DEVICE_MODE: cpu
+      HF_HOME: /opt/mineru-runtime/cache/huggingface
+      MODELSCOPE_CACHE: /opt/mineru-runtime/cache/modelscope
+      XDG_CACHE_HOME: /opt/mineru-runtime/cache
+    volumes:
+      - upload_data:/workspace/tmp/uploads
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+      - temporal
+      - minio
+      - milvus
+
+  temporal-worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        INSTALL_OPTIONAL: "true"
+        INSTALL_MINERU_RUNTIME: "true"
+        MINERU_VERSION: "${EMATA_MINERU_DOCKER_VERSION:-3.0.1}"
+        MINERU_BUILD_MODEL_SOURCE: "${EMATA_MINERU_DOCKER_MODEL_SOURCE:-modelscope}"
+        MINERU_BUILD_MODEL_TYPE: "${EMATA_MINERU_DOCKER_MODEL_TYPE:-pipeline}"
+        MINERU_BUILD_MODEL_TREE_SHA256: "${EMATA_MINERU_DOCKER_MODEL_TREE_SHA256:-581698f99866ec54ce3997d0636743a430ecc119d35eda330058fdc0ab10a285}"
+    env_file:
+      - .env.example
+      - .env
+    environment:
+      PYTHONPATH: /workspace/backend
+      EMATA_MINERU_EXECUTABLE: /opt/mineru-runtime/bin/mineru
+      MINERU_TOOLS_CONFIG_JSON: /opt/mineru-runtime/config/mineru.json
+      MINERU_MODEL_SOURCE: local
+      MINERU_DEVICE_MODE: cpu
+      HF_HOME: /opt/mineru-runtime/cache/huggingface
+      MODELSCOPE_CACHE: /opt/mineru-runtime/cache/modelscope
+      XDG_CACHE_HOME: /opt/mineru-runtime/cache
+    volumes:
+      - upload_data:/workspace/tmp/uploads
+    command: ["python", "-m", "app.temporal_worker"]
+    depends_on:
+      - temporal
+      - postgres
+
+  console:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    env_file:
+      - .env.example
+      - .env
+    environment:
+      EMATA_API_BASE_URL: http://api:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: emata
+      POSTGRES_USER: emata
+      POSTGRES_PASSWORD: emata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  temporal:
+    image: temporalio/auto-setup:1.25.2
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: emata
+      POSTGRES_PWD: emata
+      POSTGRES_SEEDS: postgres
+      DYNAMIC_CONFIG_FILE_PATH: /etc/temporal/config/dynamicconfig/docker.yaml
+    ports:
+      - "7233:7233"
+    depends_on:
+      - postgres
+
+  temporal-ui:
+    image: temporalio/ui:2.34.0
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+    ports:
+      - "8088:8080"
+    depends_on:
+      - temporal
+
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.14
+    command: >
+      etcd
+      -advertise-client-urls=http://0.0.0.0:2379
+      -listen-client-urls=http://0.0.0.0:2379
+      --data-dir=/etcd
+    ports:
+      - "2379:2379"
+    volumes:
+      - etcd_data:/etcd
+
+  minio:
+    image: minio/minio:RELEASE.2025-02-18T16-25-55Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  milvus:
+    image: milvusdb/milvus:v2.4.15
+    command: ["milvus", "run", "standalone"]
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    depends_on:
+      - etcd
+      - minio
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.107.0
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./infra/otel/otel-collector-config.yml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    profiles: ["observability"]
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    profiles: ["observability"]
+
+  loki:
+    image: grafana/loki:3.1.1
+    command: ["-config.file=/etc/loki/config.yml"]
+    volumes:
+      - ./infra/loki/loki-config.yml:/etc/loki/config.yml:ro
+    ports:
+      - "3100:3100"
+    profiles: ["observability"]
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+      - loki
+    profiles: ["observability"]
+
+volumes:
+  postgres_data:
+  etcd_data:
+  minio_data:
+  upload_data:

@@ -1,0 +1,9 @@
+.git
+.next
+node_modules
+__pycache__
+*.pyc
+.pytest_cache
+tmp
+remote_tmp
+emata.db
