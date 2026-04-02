@@ -2,7 +2,7 @@
 
 **Enterprise Memory-Augmented Task Agent**
 
-EMATA Runtime 是一个面向企业内部场景的 **Ask Runtime** 原型。它的目标不是做一个“会聊天的机器人”，而是把以下能力统一到一套可扩展运行时里：
+EMATA Runtime🏠 是一个面向企业内部场景的 **Ask Runtime** 原型。它的目标不是做一个“会聊天的机器人”，而是把以下能力统一到一套可扩展运行时里：
 
 - **Knowledge**：知识库管理、文档入库、检索、RAG 问答
 - **Context**：多轮对话上下文、工作上下文、待确认动作草案
@@ -352,7 +352,7 @@ PDF 解析通过 MinerU 接入。当前支持：
 输入：
 
 ```text
-下午五点在 Ai应用开发群开会
+下午五点在 Ai应用开发群开会！
 ```
 
 展示点：
