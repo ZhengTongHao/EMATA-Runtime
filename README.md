@@ -2,8 +2,7 @@
 
 **Enterprise Memory-Augmented Task Agent**
 
-EMATA Runtime 是一个面向企业内部场景的 **Ask Runtime** 原型。  
-它的目标不是做一个“会聊天的机器人”，而是把以下能力统一到一套可扩展运行时里：
+EMATA Runtime 是一个面向企业内部场景的 **Ask Runtime** 原型。它的目标不是做一个“会聊天的机器人”，而是把以下能力统一到一套可扩展运行时里：
 
 - **Knowledge**：知识库管理、文档入库、检索、RAG 问答
 - **Context**：多轮对话上下文、工作上下文、待确认动作草案
@@ -56,8 +55,7 @@ EMATA Runtime 的设计核心是把系统拆成 5 层：
 
 ### 2. Skill
 
-Skill 表示具体领域能力。  
-当前先落地的是：
+Skill 表示具体领域能力。当前先落地的是：
 
 - `HR Recruiting Skill`
 
@@ -71,8 +69,7 @@ Skill 表示具体领域能力。
 
 ### 3. Tool
 
-Tool 表示外部能力适配层。  
-当前重点接入：
+Tool 表示外部能力适配层。当前重点接入：
 
 - `Milvus`
 - `MinerU`
@@ -181,7 +178,7 @@ Ask 当前支持两类回答模式：
 
 ## Context Management
 
-这个项目没有把上下文简单理解成“把所有历史消息继续喂给模型”。  
+这个项目没有把上下文简单理解成“把所有历史消息继续喂给模型”。
 我把上下文拆成了 3 层：
 
 ### 1. Conversation Memory
@@ -278,15 +275,13 @@ Intent Router
 
 ### Milvus
 
-知识检索已真实接入 Milvus。  
-当前 `/knowledge` 页面可以直接看到索引状态，验证不是 fallback 检索，而是：
+知识检索已真实接入 Milvus。当前 `/knowledge` 页面可以直接看到索引状态，验证不是 fallback 检索，而是：
 
 - `backend_mode = sdk`
 
 ### MinerU
 
-PDF 解析通过 MinerU 接入。  
-当前支持：
+PDF 解析通过 MinerU 接入。当前支持：
 
 - 有效 PDF 真实解析入库
 - 无效 PDF 快速失败
@@ -481,7 +476,7 @@ See [`.env.example`](./.env.example).
 - `EMATA_STORAGE_BACKEND`
 - `EMATA_MINERU_EXECUTABLE`
 
-### Feishu
+### Feishu飞书
 
 - `EMATA_FEISHU_APP_ID`
 - `EMATA_FEISHU_APP_SECRET`
@@ -537,5 +532,5 @@ See [`.env.example`](./.env.example).
 
 ## License
 
-当前仓库未附带开源许可证。  
+当前仓库未附带开源许可证。
 如需对外长期公开，建议补充 License，并在公开前再次确认本地敏感配置和运行时文件未被提交。
