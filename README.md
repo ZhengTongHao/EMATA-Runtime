@@ -1,4 +1,4 @@
-# EMATA Runtime - 企业级 Ask Runtime
+# EMATA Runtime -  Ask Runtime
 
 **Enterprise Memory-Augmented Task Agent**
 
